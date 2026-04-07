@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -65,6 +66,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.message").value("User registered successfully"))
                 .andExpect(jsonPath("$.username").value("john"));
@@ -83,6 +85,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("jane"));
     }
@@ -99,6 +102,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
+                .andDo(print())
                 .andExpect(status().isCreated());
 
         Map<String, String> duplicate = Map.of(
@@ -110,6 +114,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(duplicate)))
+                .andDo(print())
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Username already exists: dupuser"));
     }
@@ -124,6 +129,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(first)))
+                .andDo(print())
                 .andExpect(status().isCreated());
 
         Map<String, String> second = Map.of(
@@ -134,6 +140,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(second)))
+                .andDo(print())
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Email already exists: shared@example.com"));
     }
@@ -149,6 +156,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.username").exists());
     }
@@ -164,6 +172,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.email").exists());
     }
@@ -179,6 +188,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(body)))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.password").exists());
     }
@@ -223,6 +233,7 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("username", "bcryptlogin", "password", "correct999"))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty());
 
@@ -231,6 +242,7 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 Map.of("username", "bcryptlogin", "password", "wrong999"))))
+                .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
@@ -250,6 +262,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginBody)))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.type").value("Bearer"))
@@ -270,6 +283,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginBody)))
+                .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
@@ -283,6 +297,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginBody)))
+                .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
@@ -296,6 +311,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginBody)))
+                .andDo(print())
                 .andExpect(status().isBadRequest());
     }
 
@@ -311,6 +327,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", refreshToken))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.type").value("Bearer"))
@@ -328,12 +345,14 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", originalRefreshToken))))
+                .andDo(print())
                 .andExpect(status().isOk());
 
         // Using the original (now-rotated) token must fail
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", originalRefreshToken))))
+                .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Invalid refresh token."));
     }
@@ -343,6 +362,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", UUID.randomUUID().toString()))))
+                .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Invalid refresh token."));
     }
@@ -362,6 +382,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", expired.getToken()))))
+                .andDo(print())
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Refresh token has expired. Please log in again."));
     }
@@ -371,6 +392,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("refreshToken", ""))))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.refreshToken").exists());
     }
@@ -387,6 +409,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", token))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(true))
                 .andExpect(jsonPath("$.username").value("validateuser"))
@@ -399,6 +422,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", "not.a.valid.jwt"))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(false))
                 .andExpect(jsonPath("$.username").doesNotExist())
@@ -412,6 +436,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", expiredToken))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(false));
     }
@@ -432,6 +457,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", wrongKeyToken))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(false));
     }
@@ -441,6 +467,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", ""))))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.token").exists());
     }
@@ -458,6 +485,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", token))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(true));
 
@@ -465,6 +493,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", token))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Logged out successfully"));
 
@@ -472,6 +501,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", token))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(false));
     }
@@ -481,6 +511,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", "not.a.valid.jwt"))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Token is already invalid"));
     }
@@ -490,6 +521,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", ""))))
+                .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.token").exists());
     }
@@ -503,11 +535,13 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", token))))
+                .andDo(print())
                 .andExpect(status().isOk());
 
         // Using the blacklisted token as a Bearer token should be rejected (401)
         mockMvc.perform(post("/api/some-protected-endpoint")
                         .header("Authorization", "Bearer " + token))
+                .andDo(print())
                 .andExpect(status().isUnauthorized());
     }
 
@@ -524,12 +558,14 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", token))))
+                .andDo(print())
                 .andExpect(status().isOk());
 
         // Validate returns false
         mockMvc.perform(post("/api/auth/validate")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("token", token))))
+                .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(false));
     }
