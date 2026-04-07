@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: security-service
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/security_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    defer-datasource-initialization: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  sql:
+    init:
+      mode: always
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:yfzun6yDbhnpH4ixrXXodnwpaVkHkkB4cQVF3To5oDg=}
+    expiration-ms: ${JWT_EXPIRATION_MS:3600000}       # 1 hour default
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}  # 7 days default
