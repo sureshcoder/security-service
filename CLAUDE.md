@@ -55,6 +55,12 @@ This is a Spring Boot 3.4.4 security microservice providing JWT-based authentica
 
 **Token blacklisting:** `TokenBlacklistService` uses `StringRedisTemplate` to store blacklisted JWT tokens in Redis with a key prefix `token:blacklist:` and TTL matching the token's remaining lifetime. `TokenBlacklistValidator` (an `OAuth2TokenValidator<Jwt>`) is wired into `NimbusJwtDecoder` via `DelegatingOAuth2TokenValidator` so blacklisted tokens are also rejected on authenticated endpoints.
 
+**Rate limiting:** `AuthRateLimitFilter` (`OncePerRequestFilter`, Bucket4j) applies per-IP token-bucket throttling on `/api/auth/**`. Two tiers:
+- **Strict** — `/api/auth/login`, `/api/auth/register` — default `5 req/min/IP` (credential-stuffing / enumeration protection).
+- **Standard** — all other `/api/auth/**` endpoints — default `20 req/min/IP`.
+
+Buckets are keyed by `tier + ":" + clientIp` (X-Forwarded-For first token, else `remoteAddr`) and kept in an in-memory `ConcurrentHashMap` — single-instance only; swap for a Bucket4j Redis proxy manager for multi-instance. On overflow the filter writes `429 Too Many Requests` with `Retry-After: 60` and a JSON body — it short-circuits before Spring Security's authentication filter (wired via `http.addFilterBefore(authRateLimitFilter, UsernamePasswordAuthenticationFilter.class)`). Limits are configurable via `app.rate-limit.auth.strict-per-minute` / `...standard-per-minute`; the test profile raises them to 100000 so existing tests are not throttled, and `AuthRateLimitIntegrationTest` overrides them via `@TestPropertySource` for focused throttle assertions.
+
 **DTOs are Java records** with Jakarta Bean Validation annotations. `GlobalExceptionHandler` (`@RestControllerAdvice`) provides structured JSON error responses for all exception types.
 
 ## Testing
@@ -78,15 +84,19 @@ Integration tests use H2 in-memory database (MySQL compatibility mode) and embed
 - `POST /api/auth/logout` — valid token blacklisted and returns 200, invalid token returns 200 with "already invalid" message, blank token returns 400, blacklisted token rejected by validate endpoint and OAuth2 bearer filter (401)
 - `POST /api/auth/validate` — valid token returns 200 with username/roles/expiresAt, malformed/expired/wrong-signature/blacklisted token returns 200 with `valid=false`, blank token returns 400
 
+**`AuthRateLimitIntegrationTest`** — boots its own Spring context (distinct `@TestPropertySource` with `strict-per-minute=3`, `standard-per-minute=3`) and asserts that the 4th `/login` attempt from the same IP returns `429` with `Retry-After`, and the same for `/validate` on the standard tier. Bucket state is singleton-scoped within a context, so the test runs in its own context to stay isolated from `AuthControllerIntegrationTest`.
+
 **`SecurityServiceApplicationTests`** — context load smoke test, uses `@ActiveProfiles("test")` to boot against H2.
 
 ## Configuration
 
-Environment variables with defaults in `application.yml`:
-- `DB_PASSWORD` (default: `root`) — MySQL password
-- `JWT_SECRET` (default: dev-only Base64 key) — must be ≥256 bits Base64-encoded for HS256
+Environment variables (no defaults for secrets — the app fails fast on startup if `DB_PASSWORD` or `JWT_SECRET` is missing, via the Spring `${VAR:?message}` placeholder):
+- `DB_PASSWORD` (**required**) — MySQL password
+- `JWT_SECRET` (**required**) — must be ≥256 bits Base64-encoded for HS256
 - `JWT_EXPIRATION_MS` (default: `3600000`) — JWT access token TTL, default 1 hour
 - `JWT_REFRESH_EXPIRATION_MS` (default: `604800000`) — refresh token TTL, default 7 days
 - `REDIS_HOST` (default: `localhost`) — Redis host
 - `REDIS_PORT` (default: `6379`) — Redis port
+- `AUTH_RATE_LIMIT_STRICT` (default: `5`) — per-minute per-IP limit on `/api/auth/login` and `/api/auth/register`
+- `AUTH_RATE_LIMIT_STANDARD` (default: `20`) — per-minute per-IP limit on the remaining `/api/auth/**` endpoints
 - `spring.jpa.hibernate.ddl-auto: update` — Hibernate auto-creates/updates tables (creates `refresh_tokens` table automatically)

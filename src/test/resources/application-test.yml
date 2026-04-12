@@ -29,3 +29,10 @@ app:
     secret: dGVzdC1zZWNyZXQta2V5LXRoYXQtaXMtbG9uZy1lbm91Z2gtZm9yLUhTMjU2LWFsZ29yaXRobQ==
     expiration-ms: 3600000
     refresh-expiration-ms: 604800000
+  rate-limit:
+    auth:
+      # High limits so the existing AuthControllerIntegrationTest (many
+      # hits to /login and /register) is not affected. Individual tests
+      # for rate-limit behaviour override these via @TestPropertySource.
+      strict-per-minute: 100000
+      standard-per-minute: 100000

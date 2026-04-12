@@ -35,3 +35,7 @@ app:
     secret: ${JWT_SECRET:?JWT_SECRET must be set (Base64-encoded 256-bit key)}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}       # 1 hour default
     refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}  # 7 days default
+  rate-limit:
+    auth:
+      strict-per-minute: ${AUTH_RATE_LIMIT_STRICT:5}      # /login, /register
+      standard-per-minute: ${AUTH_RATE_LIMIT_STANDARD:20} # other /api/auth/** endpoints
